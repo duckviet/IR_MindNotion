@@ -1,0 +1,7 @@
+# Tệp data.yaml
+train: /content/drive/MyDrive/DoAn-CS331/dataset_yolo/train/images
+val: /content/drive/MyDrive/DoAn-CS331/dataset_yolo/val/images
+test: /content/drive/MyDrive/DoAn-CS331/dataset_yolo/test/images
+
+nc: 2 # Số lớp (WithMask và WithoutMask)
+names: ["WithMask", "WithoutMask"] # Tên lớp

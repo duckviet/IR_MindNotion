@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Mind Notion",
+  "version": "1.0",
+  "permissions": ["contextMenus", "activeTab", "tabs", "scripting"],
+  "host_permissions": ["http://localhost:8000/*"],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

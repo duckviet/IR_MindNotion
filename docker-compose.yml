@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./cs336-final
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000 # URL của backend
+
+  backend:
+    build:
+      context: ./cs336-final-be
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./cs336-final-be:/app # Mount code để hot-reload
+    environment:
+      - PYTHONUNBUFFERED=1
