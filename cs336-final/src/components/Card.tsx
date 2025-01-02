@@ -1,39 +1,76 @@
+import { cn } from "@/lib/utils";
 import React from "react";
+import WebArticleDisplay from "./CardDisplay/WebArticleDisplay";
+import NoteDisplay from "./CardDisplay/NoteDisplay";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { Trash2Icon } from "lucide-react";
+import { EditNoteDialog } from "./EditNoteDialog";
 
 type Props = {
-  index: number;
   match: {
     id: string;
     score: any;
-    metadata: any;
+    metadata: {
+      type: string;
+      title: string;
+      content?: string;
+      [key: string]: any;
+    };
   };
+  onDelete?: (id: string) => Promise<void>;
+  onUpdateNote?: (id: string, data: { title: string; content: string }) => void;
 };
 
-export default function Card({ index, match }: Props) {
+export default function Card({ match, onDelete, onUpdateNote }: Props) {
+  const handleSaveNote = (data: { title: string; content: string }) => {
+    if (onUpdateNote) {
+      onUpdateNote(match.id, data);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (onDelete) {
+      await onDelete(match.id);
+    }
+  };
+
   return (
-    <div className="bg-gray-50 p-4 rounded-lg hover:shadow-lg shadow-md flex flex-col h-full">
-      <div className="flex min-h-[40px] justify-between w-full mb-2 gap-4">
-        <p className="text-lg font-medium">
-          {index + 1}. {match.metadata.title}
-        </p>
-        <p className="p-1 px-2 bg-red-200 rounded-lg text-nowrap h-fit">
-          Score: {match.score.toString().slice(0, 6)}...
-        </p>
-      </div>
-      <div className="h-[1px] w-full bg-gray-400 px-4"></div>
-      <p className="text-gray-600 mb-2">{match.metadata.description}</p>
-      <p className="text-sm text-gray-500">
-        <strong>Author:</strong> {match.metadata.author_name} (
-        {match.metadata.author_username})
-      </p>
-      <a
-        href={match.metadata.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-500 underline mt-2 inline-block flex-1"
-      >
-        Read more
-      </a>
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger className="relative bg-gray-50 p-6 rounded-lg hover:shadow-lg shadow-md flex flex-col h-fit w-full">
+        <div className="flex justify-between items-center w-full mb-2 gap-4">
+          <h2 className="text-lg font-medium">{match.metadata.title}</h2>
+        </div>
+        <div className="h-[1px] w-full bg-gray-300 mb-3"></div>
+
+        {match.metadata.type === "web_article" && (
+          <WebArticleDisplay metadata={match.metadata} />
+        )}
+        {match.metadata.type === "note" && (
+          <NoteDisplay metadata={match.metadata} />
+        )}
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem
+          disabled={match.metadata.type === "web_article"}
+          onSelect={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <EditNoteDialog note={match.metadata} onSave={handleSaveNote} />
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleDelete}>
+          <p className="text-red-400 text-sm">Delete</p>
+          <ContextMenuShortcut>
+            <Trash2Icon className="w-3 h-3 text-red-400" />
+          </ContextMenuShortcut>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }

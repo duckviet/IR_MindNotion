@@ -81,13 +81,38 @@ class PineconeOperations:
             logger.error(f"Reconnection error: {e}")
             raise
 
-    def query_data(
-        self,
-        query: str,
-        top_k: int = 10,
-        namespace: str = "default",
-        include_metadata: bool = True,
-    ):
+    def list_records(self,dimensions:int=768, top_k: int = 200,namespace: str = "default",include_metadata: bool = False,include_values: bool=False,):
+        if not self.index:
+            self.reconnect_index()
+        try:
+            response = self.index.query(
+                    vector=[0.0]*dimensions,
+                    top_k=top_k,
+                    namespace=namespace,
+                    include_metadata=include_metadata,
+                    include_values=include_values,
+
+                )
+            logger.info(f"list done!")
+
+            clean_response = {
+                "result": [
+                    {
+                        "id": match["id"],
+                        "score": match["score"],
+                        "metadata": {
+                            key: value if not isinstance(value, list) else str(value)
+                            for key, value in match["metadata"].items()
+                        },
+                    }
+                    for match in response.get("matches", [])
+                ], 
+            }
+            return clean_response
+        except Exception as e:
+            logger.error(f"Error during query: {e}")
+            raise
+    def query_data(self,query: str,top_k: int = 10,namespace: str = "default",include_metadata: bool = True):
         if not self.index:
             self.reconnect_index()
 
@@ -95,7 +120,7 @@ class PineconeOperations:
             embeddings = self.pc.inference.embed(
                 model="multilingual-e5-large",
                 inputs=[query],
-                parameters={"input_type": "passage", "truncate": "END"}
+                parameters={"input_type": "query"}
             )
             
             response = self.index.query(
@@ -104,46 +129,20 @@ class PineconeOperations:
                 namespace=namespace,
                 include_metadata=include_metadata,
             )
-
-            # Combine results using rank fusion
-            combined_sum_results = self.rank_fusion.comb_sum(
-                response['matches'], 
-                response['matches']
-            )
-
-            combined_mnz_results = self.rank_fusion.comb_mnz(
-                response['matches'], 
-                response['matches']
-            )
+            logger.info(f"query done!")
 
             clean_response = {
                 "result": [
                     {
-                        'embed':'multilingual-e5-large',
-                        "matches": [
-                            {
-                                "id": match["id"],
-                                "score": match["score"],
-                                "metadata": {
-                                    key: value if not isinstance(value, list) else str(value)
-                                    for key, value in match["metadata"].items()
-                                },
-                            }
-                            for match in response.get("matches", [])
-                        ],
-                        "namespace": response.get("namespace"),
-                    },
-                    {
-                        'embed':'combsum',
-                        'matches': combined_sum_results,
-                        "namespace": response.get("namespace"),
-                    },   
-                    {
-                        'embed':'combmnz',
-                        'matches': combined_mnz_results,
-                        "namespace": response.get("namespace"),
+                        "id": match["id"],
+                        "score": match["score"],
+                        "metadata": {
+                            key: value if not isinstance(value, list) else str(value)
+                            for key, value in match["metadata"].items()
+                        },
                     }
-                ]
+                    for match in response.get("matches", [])
+                ], 
             }
 
             logger.info(f"Query completed. Top {top_k} results retrieved.")
@@ -152,7 +151,54 @@ class PineconeOperations:
         except Exception as e:
             logger.error(f"Error during query: {e}")
             raise
+      
+    def add_note(self,title:str ='', content:str =''):
+        try:
+            # Ensure the Pinecone index is connected
+            if not self.index:
+                self.reconnect_index()
         
+            # Generate embeddings for the combined text
+            embeddings = self.pc.inference.embed(
+                model="multilingual-e5-large",
+                inputs=[content],  # Model expects a list of strings
+                parameters={"input_type": "passage", "truncate": "END"}
+            )
+            
+            # Generate a unique ID for the document
+            unique_id = f"doc_{uuid.uuid4()}"
+            
+            # Prepare Pinecone upsert payload
+            pinecone_item = {
+                "id": unique_id,
+                "vector": embeddings[0].values,  # Use the first (and only) embedding from the response
+                "metadata": {
+                    "title": title,
+                    'type':'note',
+                    "content": content,
+                    'create_date':'',
+                    'update_date':'',
+                }
+            }
+            
+      
+            # Upsert the document into the Pinecone index
+            self.index.upsert(
+                vectors=[{
+                    "id": pinecone_item["id"],
+                    "values": pinecone_item["vector"],  # Embedding vector (list of floats)
+                    "metadata": pinecone_item["metadata"]
+                }],
+                namespace='cs336'
+            )
+            
+            logger.info(f"Successfully added note ")
+            return {"status": "success", "message": f"note added with ID: {unique_id}"}
+        
+        except Exception as e:
+            logger.error(f"Error adding note: {e}")
+            raise
+
     def add_web_article(self, url: str = ''):
         try:
             # Ensure the Pinecone index is connected
@@ -182,6 +228,7 @@ class PineconeOperations:
                 "vector": embeddings[0].values,  # Use the first (and only) embedding from the response
                 "metadata": {
                     "title": scrape_data["title"],
+                    'type':'web_article',
                     "description": scrape_data["description"],
                     "author_name": scrape_data["author_name"],
                     "author_username": scrape_data["author_username"],
@@ -189,7 +236,9 @@ class PineconeOperations:
                     "followers": scrape_data["followers"],
                     "posts": scrape_data["posts"],
                     "url": scrape_data["url"],
-                    "paragraphs": scrape_data["paragraphs"]
+                    "paragraphs": scrape_data["paragraphs"],
+                    'create_date':'',
+                    'update_date':'',
                 }
             }
             
@@ -210,3 +259,23 @@ class PineconeOperations:
         except Exception as e:
             logger.error(f"Error adding article content: {e}")
             raise
+    def delete_record(self,id:str='',  namespace: str = "default" ):
+        try:
+            # Ensure the Pinecone index is connected
+            if not self.index:
+                self.reconnect_index()
+          
+            # Upsert the document into the Pinecone index
+            self.index.delete(
+                ids=[id],
+                namespace='cs336'
+            )
+            
+            logger.info(f"Successfully delete record ")
+            return {"status": "success", "message": f"Delete record ID {id} succesfull! "}
+        
+        except Exception as e:
+            logger.error(f"Error delete record: {e}")
+            raise
+
+

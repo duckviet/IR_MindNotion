@@ -1,8 +1,13 @@
 const noteAction = {
-  async connectToIndex(name: string) {
+  async postAddWebArticle(url: string) {
     try {
       const response = await fetch(
-        `http://localhost:8000/index/connect?index_name=${name}`
+        `http://localhost:8000/index/add_web_article`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        }
       );
       if (!response.ok) throw new Error(await response.text());
       const data = await response.json();
@@ -13,25 +18,20 @@ const noteAction = {
       console.log(err);
     }
   },
-  async queryIndex(query: string, top_k: string, name: string) {
+  async postAddNote(title: string, content: string) {
     try {
-      // const vector = query.split(",").map((v) => parseFloat(v.trim()));
-      const response = await fetch(`http://localhost:8000/index/query`, {
+      const response = await fetch(`http://localhost:8000/index/add_note`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vector: query,
-          top_k: top_k,
-          namespace: name,
-        }),
+        body: JSON.stringify({ title, content }),
       });
-
       if (!response.ok) throw new Error(await response.text());
       const data = await response.json();
       return data;
-      //   setQueryResults(data);
+      //   setConnectMessage(data.message);
     } catch (err: any) {
       //   setError(err.message);
+      console.log(err);
     }
   },
 };

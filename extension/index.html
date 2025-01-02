@@ -3,15 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Save Web Article</title>
-    <!-- <link rel="stylesheet" href="styles.css" /> -->
+    <title>Mind Notion Saver</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="container">
-      <h1>Save Current Page</h1>
-      <button id="saveButton">Save Page</button>
-      <p id="message"></p>
+      <h1>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        Mind Notion Saver
+      </h1>
+
+      <div class="actions">
+        <button class="primary" id="savePage">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+            />
+          </svg>
+          Save Current Page
+        </button>
+        <button id="saveSelection">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+          Save Selected Text
+        </button>
+      </div>
+
+      <div id="message" class="message"></div>
+
+      <div class="shortcuts">
+        <h2>Shortcuts</h2>
+        <div class="shortcut">
+          <span>Save current page</span>
+          <kbd>⌘ + Shift + S</kbd>
+        </div>
+        <div class="shortcut">
+          <span>Save selection</span>
+          <kbd>⌘ + Shift + X</kbd>
+        </div>
+      </div>
     </div>
-    <script src="popup.js"></script>
+
+    <script src="background.js"></script>
   </body>
 </html>

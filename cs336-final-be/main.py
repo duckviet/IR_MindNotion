@@ -42,8 +42,32 @@ async def connect_index(index_name: Optional[str] = None):
         return pinecone_ops.reconnect_index(index_name)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # def list_records(self,dimensions:int=768, top_k: int = 200,namespace: str = "default",include_metadata: bool = True,include_values: bool=False,):
 
+class ListRequest(BaseModel):
+    dimensions:int=768
+    top_k: int = 200
+    namespace: str = "default"
+    include_metadata: bool = True
+    include_values: bool=False
+    
+@app.post("/index/list-records")
+async def query_index(request: ListRequest):
+    """
+    List records
+    """
+    try:
+        return pinecone_ops.list_records(
+            dimensions=request.dimensions,
+            namespace=request.namespace,
+            top_k=request.top_k,
+            include_metadata=request.include_metadata,
+            include_values=request.include_values,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
  
+
 class QueryRequest(BaseModel):
     vector: str
     top_k: Optional[int] = 10
@@ -76,3 +100,28 @@ async def add_web_article(request: AddWebArticleRequest):
         return pinecone_ops.add_web_article(url=url)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error adding web article: {str(e)}")
+   
+   
+class AddNoteRequest(BaseModel):
+    title: str
+    content: str
+ 
+@app.post('/index/add_note')
+async def add_note(request: AddNoteRequest):
+    try:
+        return pinecone_ops.add_note(title=request.title,content=request.content)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error adding note: {str(e)}")
+  
+  
+class DeleteRecord(BaseModel):
+    id: str
+    namespace: str 
+@app.post('/index/delete_record')
+async def add_note(request: DeleteRecord):
+    try:
+        return pinecone_ops.delete_record(id=request.id, namespace=request.namespace)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error delete record: {str(e)}")
+   
+   
